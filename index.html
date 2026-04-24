@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Outing — Real Friends, Real Fun</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Syne', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              black: '#0a0a0a',
+              white: '#f5f3ef',
+              accent: '#e8ff5a',
+              muted: '#1a1a1a',
+              pill: '#2a2a2a',
+            }
+          },
+          animation: {
+            'float-slow': 'float 6s ease-in-out infinite',
+            'float-mid': 'float 4.5s ease-in-out infinite 1.2s',
+            'float-fast': 'float 3.5s ease-in-out infinite 0.6s',
+            'slide-up': 'slideUp 0.9s cubic-bezier(0.16,1,0.3,1) both',
+            'fade-in': 'fadeIn 0.8s ease both',
+            'spin-slow': 'spin 20s linear infinite',
+          },
+          keyframes: {
+            float: {
+              '0%,100%': { transform: 'translateY(0px) rotate(var(--rot,0deg))' },
+              '50%': { transform: 'translateY(-14px) rotate(var(--rot,0deg))' },
+            },
+            slideUp: {
+              from: { opacity: 0, transform: 'translateY(40px)' },
+              to: { opacity: 1, transform: 'translateY(0)' },
+            },
+            fadeIn: {
+              from: { opacity: 0 },
+              to: { opacity: 1 },
+            },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: #0a0a0a; color: #f5f3ef; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0a; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.35;
+    }
+
+    /* Floating card base */
+    .float-card {
+      position: absolute;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    /* Pill / Tag */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      color: #f5f3ef;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .pill:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+    .pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #e8ff5a;
+      flex-shrink: 0;
+    }
+    .pill-dark {
+      background: #1c1c1c;
+      border-color: rgba(255,255,255,0.08);
+    }
+
+    /* Floating label */
+    .floating-label {
+      position: absolute;
+      background: #f5f3ef;
+      color: #0a0a0a;
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    /* Chat bubble */
+    .chat-bubble {
+      background: #1e1e1e;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px 18px 18px 4px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: #f5f3ef;
+      max-width: 240px;
+    }
+    .chat-bubble-right {
+      border-radius: 18px 18px 4px 18px;
+      background: #e8ff5a;
+      color: #0a0a0a;
+    }
+
+    /* Section separator */
+    .scroll-hint {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(245,243,239,0.3);
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.05em;
+    }
+
+    /* Image card with rounded corners and object fit */
+    .img-card {
+      border-radius: 16px;
+      overflow: hidden;
+      display: block;
+    }
+    .img-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Activity tag */
+    .act-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: #f5f3ef;
+    }
+
+    /* CTA button */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #e8ff5a;
+      color: #0a0a0a;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 14px 28px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-decoration: none;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(232,255,90,0.3); }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      color: #f5f3ef;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      font-size: 15px;
+      padding: 13px 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      text-decoration: none;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.06); transform: translateY(-2px); }
+
+    /* Nav link */
+    .nav-link {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: rgba(245,243,239,0.65);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: #f5f3ef; }
+
+    /* Memory card */
+    .memory-card {
+      background: #f5f3ef;
+      border-radius: 20px;
+      padding: 16px;
+      color: #0a0a0a;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* Section divider */
+    .section-gap { padding: 100px 0; }
+    @media (max-width: 768px) { .section-gap { padding: 64px 0; } }
+
+    /* Responsive hero float positions */
+    @media (max-width: 1024px) {
+      .hero-floats { display: none; }
+    }
+  </style>
+</head>
+<body style="padding-top: 90px;">
+
+<!-- ═══════════════════════════════ NAVBAR ═══════════════════════════════ -->
+<nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-5" style="background: rgba(10,10,10,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.04);">
+  <a href="#" class="font-display font-bold text-xl tracking-tight" style="color:#f5f3ef;">OUTING</a>
+
+  <div class="hidden md:flex items-center gap-8">
+    <a href="#experiences" class="nav-link">Experiences</a>
+    <a href="#organize" class="nav-link">How It Works</a>
+    <a href="#memories" class="nav-link">Memories</a>
+    <a href="#activities" class="nav-link">Activities</a>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <a href="#" class="btn-secondary hidden md:inline-flex" style="font-size:13px; padding:9px 20px;">Log in</a>
+    <a href="#" class="btn-primary" style="font-size:13px; padding:9px 20px;">Download App</a>
+  </div>
+</nav>
+
+<!-- announcement bar -->
+<div class="w-full text-center py-2 text-xs font-body" style="background:#1a1a1a; color:rgba(245,243,239,0.5); padding-top: 72px; margin-top:0;">
+  Introducing <span style="color:#e8ff5a;">Outing AI</span> — Organizes &amp; Raises Attendance for You. &amp; Your Friends. &nbsp;•&nbsp; <a href="#" style="color:#e8ff5a; text-decoration:none;">Download →</a>
+</div>
+
+
+<!-- ═══════════════════════════════ HERO SECTION ═══════════════════════════════ -->
+<section id="hero" class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden" style="padding: 80px 24px 60px;">
+
+  <!-- Background glow blobs -->
+  <div class="absolute" style="width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(232,255,90,0.06) 0%,transparent 70%);top:10%;left:50%;transform:translateX(-50%);pointer-events:none;"></div>
+  <div class="absolute" style="width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(100,150,255,0.05) 0%,transparent 70%);top:30%;left:15%;pointer-events:none;"></div>
+
+  <!-- FLOATING CARDS — LEFT SIDE -->
+  <div class="hero-floats" style="position:absolute;left:5%;top:15%;width:220px;animation:float 6s ease-in-out infinite;--rot:-5deg;transform:rotate(-5deg);">
+    <div class="img-card" style="height:160px;background:linear-gradient(135deg,#1a3a5c,#0d2a45);">
+      <div style="width:100%;height:100%;background:linear-gradient(160deg,#2a5080 0%,#0a1e35 100%);display:flex;align-items:center;justify-content:center;">
+        <div style="text-align:center;">
+          <div style="font-size:36px;margin-bottom:4px;">🚣</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.6);">Kayaking trip</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-floats" style="position:absolute;left:3%;top:45%;width:180px;animation:float 4.5s ease-in-out infinite 1.2s;--rot:3deg;transform:rotate(3deg);">
+    <div style="background:#1c1c1c;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:#e8ff5a;display:flex;align-items:center;justify-content:center;font-size:12px;">🎯</div>
+        <div style="font-size:11px;font-weight:600;color:#f5f3ef;">Mini Golf</div>
+      </div>
+      <div style="font-size:10px;color:rgba(245,243,239,0.5);">Saturday 3pm · 6 friends</div>
+      <div style="margin-top:8px;display:flex;gap:4px;">
+        <span class="act-tag" style="font-size:10px;padding:3px 8px;">Outdoor</span>
+        <span class="act-tag" style="font-size:10px;padding:3px 8px;">Fun</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING CARDS — RIGHT SIDE -->
+  <div class="hero-floats" style="position:absolute;right:4%;top:18%;width:210px;animation:float 5s ease-in-out infinite 0.8s;--rot:4deg;transform:rotate(4deg);">
+    <div class="img-card" style="height:150px;background:#1a1a1a;">
+      <div style="width:100%;height:100%;background:linear-gradient(135deg,#2d1a4a,#1a0d30);display:flex;align-items:center;justify-content:center;">
+        <div style="text-align:center;">
+          <div style="font-size:36px;margin-bottom:4px;">🎤</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.6);">Karaoke night</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-floats" style="position:absolute;right:6%;top:50%;width:190px;animation:float 5.5s ease-in-out infinite 2s;--rot:-3deg;transform:rotate(-3deg);">
+    <div style="background:#f5f3ef;border-radius:16px;padding:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="display:flex;">
+          <div style="width:22px;height:22px;border-radius:50%;background:#ff6b6b;border:2px solid #f5f3ef;margin-right:-6px;font-size:10px;display:flex;align-items:center;justify-content:center;">👤</div>
+          <div style="width:22px;height:22px;border-radius:50%;background:#4ecdc4;border:2px solid #f5f3ef;margin-right:-6px;font-size:10px;display:flex;align-items:center;justify-content:center;">👤</div>
+          <div style="width:22px;height:22px;border-radius:50%;background:#ffe66d;border:2px solid #f5f3ef;font-size:10px;display:flex;align-items:center;justify-content:center;">👤</div>
+        </div>
+        <div style="font-size:10px;color:#666;">+3 more</div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:#0a0a0a;">Italian Dinner 🍝</div>
+      <div style="font-size:10px;color:#888;margin-top:2px;">Fri Aug 5 · 2:00 PM</div>
+    </div>
+  </div>
+
+  <!-- HERO TEXT -->
+  <div class="text-center relative z-10" style="max-width:720px;">
+
+    <!-- Top pill -->
+    <div class="flex items-center justify-center gap-3 mb-8" style="animation: slideUp 0.9s cubic-bezier(0.16,1,0.3,1) both 0.1s;">
+      <span class="pill">
+        <span class="pill-dot"></span>
+        AI-powered plans for your crew
+      </span>
+    </div>
+
+    <!-- Headline -->
+    <h1 class="font-display font-extrabold leading-none mb-6" style="font-size:clamp(56px,10vw,110px);letter-spacing:-3px;animation:slideUp 0.9s cubic-bezier(0.16,1,0.3,1) both 0.2s;">
+      real<br/>
+      <span style="color:#e8ff5a;">friends</span><br/>
+      real fun
+    </h1>
+
+    <!-- Subtext -->
+    <p class="font-body mb-10" style="font-size:18px;color:rgba(245,243,239,0.55);line-height:1.7;max-width:460px;margin-inline:auto;animation:slideUp 0.9s cubic-bezier(0.16,1,0.3,1) both 0.35s;">
+      Outing AI organizes outings for your whole group — picking dates, places, and sending invites automatically.
+    </p>
+
+    <!-- CTA buttons -->
+    <div class="flex flex-wrap items-center justify-center gap-4" style="animation:slideUp 0.9s cubic-bezier(0.16,1,0.3,1) both 0.48s;">
+      <a href="#" class="btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="currentColor"/></svg>
+        Download The App
+      </a>
+      <a href="#experiences" class="btn-secondary">See how it works ↓</a>
+    </div>
+
+    <!-- Pills row -->
+    <div class="flex flex-wrap items-center justify-center gap-2 mt-10" style="animation:fadeIn 1s ease both 0.7s;">
+      <span class="pill pill-dark">🎳 Bowling</span>
+      <span class="pill pill-dark">🍕 Dinner plans</span>
+      <span class="pill pill-dark">🎨 Art nights</span>
+      <span class="pill pill-dark">🏕️ Camping</span>
+      <span class="pill pill-dark">🎮 Game nights</span>
+    </div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 scroll-hint" style="animation:fadeIn 1.2s ease both 1.2s;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 4v16M6 14l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Scroll for more
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════ EXPERIENCES SECTION ═══════════════════════════════ -->
+<section id="experiences" class="section-gap relative overflow-hidden">
+  <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
+
+    <!-- Section label -->
+    <div class="flex justify-center mb-6 reveal">
+      <span class="pill"><span class="pill-dot"></span>New Experiences</span>
+    </div>
+
+    <!-- Headline -->
+    <h2 class="font-display font-extrabold text-center reveal" style="font-size:clamp(42px,7vw,80px);letter-spacing:-2px;line-height:1.05;max-width:700px;margin:0 auto 60px;">
+      new experiences,<br/><span style="color:#e8ff5a;">offline</span>
+    </h2>
+
+    <!-- Floating cards grid layout -->
+    <div class="relative" style="min-height:480px;">
+
+      <!-- Background large card -->
+      <div class="reveal" style="position:relative;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;align-items:start;">
+
+        <!-- Card 1: Go-Kart -->
+        <div style="background:linear-gradient(135deg,#1a0d30,#2d1a4a);border-radius:24px;padding:24px;aspect-ratio:3/4;display:flex;flex-direction:column;justify-content:flex-end;animation:float 6.5s ease-in-out infinite;--rot:-2deg;transform:rotate(-2deg);">
+          <div style="font-size:48px;margin-bottom:12px;">🏎️</div>
+          <h3 class="font-display font-bold" style="font-size:22px;margin-bottom:6px;">Go-Kart Racing</h3>
+          <p style="font-size:13px;color:rgba(245,243,239,0.5);margin-bottom:12px;">High-speed fun for the whole crew</p>
+          <div class="flex gap-2 flex-wrap">
+            <span class="act-tag">Thrilling</span>
+            <span class="act-tag">Competitive</span>
+          </div>
+        </div>
+
+        <!-- Card 2: Dance / Nightlife — tall -->
+        <div style="background:linear-gradient(135deg,#1a2a1a,#0d1a0d);border-radius:24px;padding:24px;aspect-ratio:2/3;display:flex;flex-direction:column;justify-content:flex-end;margin-top:-30px;animation:float 5.5s ease-in-out infinite 1s;--rot:1deg;transform:rotate(1deg);">
+          <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+          <h3 class="font-display font-bold" style="font-size:22px;margin-bottom:6px;">Night Out</h3>
+          <p style="font-size:13px;color:rgba(245,243,239,0.5);margin-bottom:12px;">Dance, laugh, make memories</p>
+          <div class="flex gap-2 flex-wrap">
+            <span class="act-tag">Social</span>
+            <span class="act-tag">Nightlife</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Kayaking -->
+        <div style="background:linear-gradient(135deg,#0d2a3a,#1a4a5c);border-radius:24px;padding:24px;aspect-ratio:3/4;display:flex;flex-direction:column;justify-content:flex-end;animation:float 7s ease-in-out infinite 0.5s;--rot:2deg;transform:rotate(2deg);">
+          <div style="font-size:48px;margin-bottom:12px;">🚣</div>
+          <h3 class="font-display font-bold" style="font-size:22px;margin-bottom:6px;">Kayaking</h3>
+          <p style="font-size:13px;color:rgba(245,243,239,0.5);margin-bottom:12px;">Paddle through scenic routes together</p>
+          <div class="flex gap-2 flex-wrap">
+            <span class="act-tag">Outdoor</span>
+            <span class="act-tag">Adventure</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Floating pills scattered -->
+      <div class="hidden lg:block floating-label" style="top:-20px;left:8%;animation:float 4s ease-in-out infinite;">
+        🎸 Live Music
+      </div>
+      <div class="hidden lg:block floating-label" style="top:-20px;right:10%;animation:float 5s ease-in-out infinite 1.5s;background:#e8ff5a;">
+        🎪 Festivals
+      </div>
+      <div class="hidden lg:block floating-label" style="bottom:-10px;left:15%;animation:float 6s ease-in-out infinite 0.8s;">
+        🍜 Food Tours
+      </div>
+    </div>
+
+    <!-- Activities pills row -->
+    <div class="flex flex-wrap justify-center gap-3 mt-16 reveal">
+      <span class="pill">🎯 Arcades</span>
+      <span class="pill">🧗 Climbing</span>
+      <span class="pill">🎭 Theater</span>
+      <span class="pill">🍷 Wine Tasting</span>
+      <span class="pill">🏖️ Beach Days</span>
+      <span class="pill">🎨 Art Classes</span>
+      <span class="pill">🎳 Bowling</span>
+    </div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="flex justify-center mt-16 scroll-hint reveal">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 4v16M6 14l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <span class="ml-2">Scroll for more</span>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════ ORGANIZE SECTION ═══════════════════════════════ -->
+<section id="organize" class="section-gap relative overflow-hidden">
+  <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
+
+    <!-- Floating notifications (left & right) -->
+    <div class="hidden md:flex justify-between items-start mb-8">
+      <div class="floating-label reveal" style="position:relative;top:auto;left:auto;animation:float 5s ease-in-out infinite;">
+        matt just responded yes ✅
+      </div>
+      <div class="floating-label reveal" style="position:relative;top:auto;right:auto;animation:float 4.5s ease-in-out infinite 1s;">
+        sarah just responded yes ✅
+      </div>
+    </div>
+
+    <!-- Headline -->
+    <h2 class="font-display font-extrabold text-center reveal" style="font-size:clamp(42px,7vw,80px);letter-spacing:-2px;line-height:1.05;max-width:700px;margin:0 auto 16px;">
+      organized by<br/><span style="color:#e8ff5a;">outing ai</span>
+    </h2>
+
+    <!-- Second notification row -->
+    <div class="flex justify-center mb-12 reveal">
+      <div class="floating-label" style="position:relative;animation:float 6s ease-in-out infinite 0.5s;">
+        andrew just rsvp'd 🎉
+      </div>
+    </div>
+
+    <!-- Chat / Plan preview card -->
+    <div class="reveal" style="max-width:520px;margin:0 auto;">
+      <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:20px;box-shadow:0 30px 80px rgba(0,0,0,0.5);">
+
+        <!-- Chat header -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#e8ff5a,#b8d400);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🤖</div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#f5f3ef;">Outing AI</div>
+            <div style="font-size:11px;color:rgba(245,243,239,0.4);">Planning your crew's next outing</div>
+          </div>
+          <div style="margin-left:auto;font-size:11px;color:rgba(245,243,239,0.3);">now</div>
+        </div>
+
+        <!-- Messages -->
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="chat-bubble">Hey! Here's the plan for this week 👋</div>
+
+          <!-- Plan card inside chat -->
+          <div style="background:#252525;border-radius:16px;padding:14px;border:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:11px;color:rgba(245,243,239,0.4);margin-bottom:4px;">Thursday 10/21 · 7:00pm · $85</div>
+            <div style="font-size:14px;font-weight:600;color:#f5f3ef;margin-bottom:8px;">Go-Kart Racing 🏎️ + Mini Golf ⛳</div>
+            <div style="font-size:11px;color:rgba(245,243,239,0.4);margin-bottom:10px;">Friends invited: malcolm, sarah, and you!</div>
+            <div style="display:flex;gap:6px;">
+              <span class="pill" style="font-size:11px;padding:4px 12px;background:#e8ff5a;color:#0a0a0a;border-color:transparent;">Interested? ✓</span>
+              <span class="pill" style="font-size:11px;padding:4px 12px;">Maybe later</span>
+            </div>
+          </div>
+
+          <div class="chat-bubble">Also sending reminders to everyone 📅</div>
+          <div class="chat-bubble chat-bubble-right" style="align-self:flex-end;">Sounds amazing! Count me in 🙌</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features pills row -->
+    <div class="flex flex-wrap justify-center gap-3 mt-12 reveal">
+      <span class="pill"><span class="pill-dot"></span>Auto-schedules for everyone</span>
+      <span class="pill"><span class="pill-dot"></span>Sends reminders</span>
+      <span class="pill"><span class="pill-dot"></span>Tracks RSVPs</span>
+      <span class="pill"><span class="pill-dot"></span>Finds the best time</span>
+    </div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="flex justify-center mt-16 scroll-hint reveal">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 4v16M6 14l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <span class="ml-2">Scroll for more</span>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════ MEMORIES SECTION ═══════════════════════════════ -->
+<section id="memories" class="section-gap relative overflow-hidden">
+  <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
+    <div class="flex flex-col lg:flex-row items-center gap-16">
+
+      <!-- Left: Headline -->
+      <div class="flex-1 reveal">
+        <span class="pill mb-6 inline-flex"><span class="pill-dot"></span>Shared moments</span>
+        <h2 class="font-display font-extrabold" style="font-size:clamp(42px,7vw,72px);letter-spacing:-2px;line-height:1.05;margin-top:16px;margin-bottom:20px;">
+          share new<br/><span style="color:#e8ff5a;">memories</span>
+        </h2>
+        <p class="font-body" style="font-size:17px;color:rgba(245,243,239,0.55);line-height:1.7;max-width:380px;margin-bottom:32px;">
+          Every outing becomes a shared album. Relive the fun, share photos, and keep the memories alive with your crew.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <span class="pill">📸 Auto photo albums</span>
+          <span class="pill">🔗 Easy sharing</span>
+          <span class="pill">💬 Group reactions</span>
+        </div>
+      </div>
+
+      <!-- Right: Memory card floating -->
+      <div class="flex-1 flex justify-center reveal">
+        <div style="position:relative;width:340px;height:300px;">
+
+          <!-- Main memory card -->
+          <div class="memory-card" style="position:absolute;top:0;left:0;width:320px;animation:float 6s ease-in-out infinite;">
+            <!-- Photo placeholder -->
+            <div style="border-radius:12px;overflow:hidden;margin-bottom:12px;height:140px;background:linear-gradient(135deg,#ff9a9e,#fecfef,#a18cd1);display:flex;align-items:center;justify-content:center;font-size:40px;">
+              🍽️
+            </div>
+            <!-- Event info -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <div style="display:flex;margin-right:4px;">
+                <div style="width:20px;height:20px;border-radius:50%;background:#ff6b6b;border:2px solid #f5f3ef;"></div>
+                <div style="width:20px;height:20px;border-radius:50%;background:#4ecdc4;border:2px solid #f5f3ef;margin-left:-6px;"></div>
+                <div style="width:20px;height:20px;border-radius:50%;background:#ffe66d;border:2px solid #f5f3ef;margin-left:-6px;"></div>
+                <div style="width:20px;height:20px;border-radius:50%;background:#a29bfe;border:2px solid #f5f3ef;margin-left:-6px;"></div>
+              </div>
+              <span style="font-size:12px;color:#666;"></span>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:#0a0a0a;">Prix Fixe Private Italian Dinner</div>
+            <div style="font-size:11px;color:#888;margin-top:2px;">Fri, Aug 5 · 2:00 PM – 5:00 PM</div>
+            <div style="font-size:11px;color:#aaa;margin-top:2px;">17 W 26th St, New York, NY 10010</div>
+            <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+              <div style="display:flex;gap:8px;">
+                <span style="font-size:11px;color:#0a0a0a;background:#f0f0f0;padding:3px 10px;border-radius:999px;cursor:pointer;">Congrats 🎉</span>
+                <span style="font-size:11px;color:#0a0a0a;background:#f0f0f0;padding:3px 10px;border-radius:999px;cursor:pointer;">5 photos saved</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Background card offset -->
+          <div style="position:absolute;top:20px;left:20px;width:320px;height:200px;background:#1e1e1e;border-radius:20px;border:1px solid rgba(255,255,255,0.06);z-index:-1;transform:rotate(3deg);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="flex justify-center mt-16 scroll-hint reveal">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 4v16M6 14l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <span class="ml-2">Scroll for more</span>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════ ACTIVITIES SECTION ═══════════════════════════════ -->
+<section id="activities" class="section-gap relative overflow-hidden">
+  <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
+
+    <!-- Floating tags scattered above headline (visible on desktop) -->
+    <div class="hidden lg:flex justify-between items-start mb-6">
+      <div class="act-tag" style="border:1px solid rgba(255,255,255,0.15);padding:8px 18px;font-size:13px;animation:float 5s ease-in-out infinite;">
+        🎤 Karaoke
+      </div>
+      <div class="act-tag" style="border:1px solid rgba(255,255,255,0.15);padding:8px 18px;font-size:13px;animation:float 6s ease-in-out infinite 1s;">
+        🏇 Horseback Riding
+      </div>
+    </div>
+
+    <h2 class="font-display font-extrabold text-center reveal" style="font-size:clamp(42px,7vw,80px);letter-spacing:-2px;line-height:1.05;max-width:800px;margin:0 auto 50px;">
+      all your favorite<br/><span style="color:#e8ff5a;">activities</span>
+    </h2>
+
+    <!-- Activity cards grid -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 reveal">
+
+      <div style="background:#141414;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px;transition:background 0.2s,transform 0.2s;cursor:pointer;" onmouseover="this.style.background='#1e1e1e';this.style.transform='translateY(-4px)'" onmouseout="this.style.background='#141414';this.style.transform='translateY(0)'">
+        <div style="font-size:32px;">🎳</div>
+        <div style="font-size:14px;font-weight:600;color:#f5f3ef;">Bowling</div>
+        <div style="font-size:12px;color:rgba(245,243,239,0.45);">Classic group fun</div>
+        <div class="flex gap-2 flex-wrap mt-auto"><span class="act-tag" style="font-size:10px;padding:2px 8px;">Indoor</span></div>
+      </div>
+
+      <div style="background:#141414;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px;transition:background 0.2s,transform 0.2s;cursor:pointer;" onmouseover="this.style.background='#1e1e1e';this.style.transform='translateY(-4px)'" onmouseout="this.style.background='#141414';this.style.transform='translateY(0)'">
+        <div style="font-size:32px;">🏄</div>
+        <div style="font-size:14px;font-weight:600;color:#f5f3ef;">Surfing</div>
+        <div style="font-size:12px;color:rgba(245,243,239,0.45);">Ride the waves</div>
+        <div class="flex gap-2 flex-wrap mt-auto"><span class="act-tag" style="font-size:10px;padding:2px 8px;">Outdoor</span></div>
+      </div>
+
+      <div style="background:#141414;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px;transition:background 0.2s,transform 0.2s;cursor:pointer;" onmouseover="this.style.background='#1e1e1e';this.style.transform='translateY(-4px)'" onmouseout="this.style.background='#141414';this.style.transform='translateY(0)'">
+        <div style="font-size:32px;">🎨</div>
+        <div style="font-size:14px;font-weight:600;color:#f5f3ef;">Paint & Sip</div>
+        <div style="font-size:12px;color:rgba(245,243,239,0.45);">Creative evenings</div>
+        <div class="flex gap-2 flex-wrap mt-auto"><span class="act-tag" style="font-size:10px;padding:2px 8px;">Creative</span></div>
+      </div>
+
+      <div style="background:#141414;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px;transition:background 0.2s,transform 0.2s;cursor:pointer;" onmouseover="this.style.background='#1e1e1e';this.style.transform='translateY(-4px)'" onmouseout="this.style.background='#141414';this.style.transform='translateY(0)'">
+        <div style="font-size:32px;">🧗</div>
+        <div style="font-size:14px;font-weight:600;color:#f5f3ef;">Rock Climbing</div>
+        <div style="font-size:12px;color:rgba(245,243,239,0.45);">Push your limits</div>
+        <div class="flex gap-2 flex-wrap mt-auto"><span class="act-tag" style="font-size:10px;padding:2px 8px;">Sport</span></div>
+      </div>
+
+      <div style="background:#141414;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px;transition:background 0.2s,transform 0.2s;cursor:pointer;" onmouseover="this.style.background='#1e1e1e';this.style.transform='translateY(-4px)'" onmouseout="this.style.background='#141414';this.style.transform='translateY(0)'">
+        <div style="font-size:32px;">🎭</div>
+        <div style="font-size:14px;font-weight:600;color:#f5f3ef;">Theater & Shows</div>
+        <div style="font-size:12px;color:rgba(245,243,239,0.45);">Culture nights out</div>
+        <div class="flex gap-2 flex-wrap mt-auto"><span class="act-tag" style="font-size:10px;padding:2px 8px;">Culture</span></div>
+      </div>
+
+      <div style="background:#141414;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px;transition:background 0.2s,transform 0.2s;cursor:pointer;" onmouseover="this.style.background='#1e1e1e';this.style.transform='translateY(-4px)'" onmouseout="this.style.background='#141414';this.style.transform='translateY(0)'">
+        <div style="font-size:32px;">🍜</div>
+        <div style="font-size:14px;font-weight:600;color:#f5f3ef;">Food Tours</div>
+        <div style="font-size:12px;color:rgba(245,243,239,0.45);">Taste the city</div>
+        <div class="flex gap-2 flex-wrap mt-auto"><span class="act-tag" style="font-size:10px;padding:2px 8px;">Food</span></div>
+      </div>
+
+      <div style="background:#141414;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px;transition:background 0.2s,transform 0.2s;cursor:pointer;" onmouseover="this.style.background='#1e1e1e';this.style.transform='translateY(-4px)'" onmouseout="this.style.background='#141414';this.style.transform='translateY(0)'">
+        <div style="font-size:32px;">⛳</div>
+        <div style="font-size:14px;font-weight:600;color:#f5f3ef;">Mini Golf</div>
+        <div style="font-size:12px;color:rgba(245,243,239,0.45);">Friendly rivalries</div>
+        <div class="flex gap-2 flex-wrap mt-auto"><span class="act-tag" style="font-size:10px;padding:2px 8px;">Casual</span></div>
+      </div>
+
+      <!-- CTA card -->
+      <div style="background:#e8ff5a;border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 16px 40px rgba(232,255,90,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+        <div style="font-size:32px;">✨</div>
+        <div style="font-size:14px;font-weight:700;color:#0a0a0a;">& 100+ more</div>
+        <div style="font-size:12px;color:rgba(10,10,10,0.6);">New ideas every week</div>
+        <div style="margin-top:auto;font-size:13px;font-weight:600;color:#0a0a0a;">Explore all →</div>
+      </div>
+
+    </div>
+
+    <!-- Bottom tags row -->
+    <div class="hidden lg:flex justify-between items-end mt-6">
+      <div class="act-tag" style="border:1px solid rgba(255,255,255,0.15);padding:8px 18px;font-size:13px;animation:float 4.5s ease-in-out infinite 0.3s;">
+        🏊 Pool Party
+      </div>
+      <div class="act-tag" style="border:1px solid rgba(255,255,255,0.15);padding:8px 18px;font-size:13px;animation:float 5.5s ease-in-out infinite 1.8s;">
+        🥊 Boxing Class
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="flex justify-center mt-16 scroll-hint reveal">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 4v16M6 14l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <span class="ml-2">Scroll for more</span>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════ JOIN CTA SECTION ═══════════════════════════════ -->
+<section class="section-gap relative overflow-hidden">
+  <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
+
+    <!-- Floating people around the headline (emoji stand-ins) -->
+    <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
+
+      <!-- Left illustration -->
+      <div class="hidden lg:flex gap-4 items-end reveal">
+        <div style="background:linear-gradient(135deg,#6c3483,#2e86de);border-radius:24px;padding:32px 24px;text-align:center;animation:float 5s ease-in-out infinite;">
+          <div style="font-size:60px;margin-bottom:8px;">💃</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.7);">Dancing</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#1abc9c,#0d6e55);border-radius:24px;padding:24px;text-align:center;margin-bottom:20px;animation:float 6s ease-in-out infinite 1s;">
+          <div style="font-size:48px;margin-bottom:8px;">🕺</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.7);">Good vibes</div>
+        </div>
+      </div>
+
+      <!-- Center: headline + QR -->
+      <div class="text-center reveal" style="flex:1;">
+        <h2 class="font-display font-extrabold" style="font-size:clamp(56px,9vw,96px);letter-spacing:-3px;line-height:1.0;margin-bottom:40px;">
+          join<br/>the fun
+        </h2>
+
+        <!-- QR Code placeholder -->
+        <div style="background:#f5f3ef;border-radius:20px;padding:20px;display:inline-block;margin-bottom:24px;">
+          <div style="width:120px;height:120px;background:#0a0a0a;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <!-- Simple QR-like grid pattern -->
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Top-left finder -->
+              <rect x="2" y="2" width="24" height="24" rx="2" fill="#f5f3ef"/>
+              <rect x="6" y="6" width="16" height="16" rx="1" fill="#0a0a0a"/>
+              <rect x="10" y="10" width="8" height="8" fill="#f5f3ef"/>
+              <!-- Top-right finder -->
+              <rect x="54" y="2" width="24" height="24" rx="2" fill="#f5f3ef"/>
+              <rect x="58" y="6" width="16" height="16" rx="1" fill="#0a0a0a"/>
+              <rect x="62" y="10" width="8" height="8" fill="#f5f3ef"/>
+              <!-- Bottom-left finder -->
+              <rect x="2" y="54" width="24" height="24" rx="2" fill="#f5f3ef"/>
+              <rect x="6" y="58" width="16" height="16" rx="1" fill="#0a0a0a"/>
+              <rect x="10" y="62" width="8" height="8" fill="#f5f3ef"/>
+              <!-- Data modules -->
+              <rect x="30" y="2" width="8" height="8" rx="1" fill="#f5f3ef"/>
+              <rect x="42" y="2" width="8" height="8" rx="1" fill="#f5f3ef"/>
+              <rect x="30" y="14" width="4" height="4" rx="0.5" fill="#f5f3ef"/>
+              <rect x="38" y="14" width="4" height="4" rx="0.5" fill="#f5f3ef"/>
+              <rect x="46" y="14" width="6" height="4" rx="0.5" fill="#f5f3ef"/>
+              <rect x="2" y="30" width="8" height="4" rx="0.5" fill="#f5f3ef"/>
+              <rect x="14" y="30" width="4" height="8" rx="0.5" fill="#f5f3ef"/>
+              <rect x="22" y="30" width="4" height="4" rx="0.5" fill="#f5f3ef"/>
+              <rect x="30" y="30" width="20" height="20" rx="4" fill="#e8ff5a"/>
+              <rect x="54" y="30" width="8" height="8" rx="0.5" fill="#f5f3ef"/>
+              <rect x="66" y="30" width="6" height="6" rx="0.5" fill="#f5f3ef"/>
+              <rect x="54" y="42" width="4" height="10" rx="0.5" fill="#f5f3ef"/>
+              <rect x="62" y="42" width="10" height="4" rx="0.5" fill="#f5f3ef"/>
+              <rect x="62" y="50" width="6" height="6" rx="0.5" fill="#f5f3ef"/>
+              <rect x="30" y="54" width="4" height="10" rx="0.5" fill="#f5f3ef"/>
+              <rect x="38" y="54" width="8" height="6" rx="0.5" fill="#f5f3ef"/>
+              <rect x="38" y="64" width="6" height="6" rx="0.5" fill="#f5f3ef"/>
+              <rect x="48" y="54" width="4" height="4" rx="0.5" fill="#f5f3ef"/>
+            </svg>
+          </div>
+          <div style="font-size:11px;color:#888;margin-top:8px;font-family:Inter,sans-serif;">Scan to download</div>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-3">
+          <a href="#" class="btn-primary">App Store</a>
+          <a href="#" class="btn-secondary">Google Play</a>
+        </div>
+      </div>
+
+      <!-- Right illustration -->
+      <div class="hidden lg:flex gap-4 items-start reveal">
+        <div style="background:linear-gradient(135deg,#e67e22,#d35400);border-radius:24px;padding:24px;text-align:center;margin-top:20px;animation:float 4.5s ease-in-out infinite 0.5s;">
+          <div style="font-size:48px;margin-bottom:8px;">🤸</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.7);">Active</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#e74c3c,#c0392b);border-radius:24px;padding:32px 24px;text-align:center;animation:float 5.5s ease-in-out infinite 1.5s;">
+          <div style="font-size:60px;margin-bottom:8px;">🎊</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.7);">Celebrate</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
+<footer style="border-top:1px solid rgba(255,255,255,0.06);padding:48px 24px 32px;">
+  <div style="max-width:1100px;margin:0 auto;">
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      <div>
+        <div class="font-display font-bold text-xl mb-4" style="color:#f5f3ef;">OUTING</div>
+        <div style="font-size:13px;color:rgba(245,243,239,0.4);line-height:1.6;">contact@theoutings.com</div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <a href="#" class="pill" style="font-size:12px;padding:5px 12px;">Instagram</a>
+          <a href="#" class="pill" style="font-size:12px;padding:5px 12px;">TikTok</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:rgba(245,243,239,0.35);letter-spacing:0.08em;margin-bottom:12px;text-transform:uppercase;">Product</div>
+        <div class="flex flex-col gap-2">
+          <a href="#" class="nav-link" style="font-size:13px;">About</a>
+          <a href="#" class="nav-link" style="font-size:13px;">How it works</a>
+          <a href="#" class="nav-link" style="font-size:13px;">Download</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:rgba(245,243,239,0.35);letter-spacing:0.08em;margin-bottom:12px;text-transform:uppercase;">Support</div>
+        <div class="flex flex-col gap-2">
+          <a href="#" class="nav-link" style="font-size:13px;">Safety</a>
+          <a href="#" class="nav-link" style="font-size:13px;">Contact us</a>
+          <a href="#" class="nav-link" style="font-size:13px;">FAQ</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:rgba(245,243,239,0.35);letter-spacing:0.08em;margin-bottom:12px;text-transform:uppercase;">Legal</div>
+        <div class="flex flex-col gap-2">
+          <a href="#" class="nav-link" style="font-size:13px;">Terms of Service</a>
+          <a href="#" class="nav-link" style="font-size:13px;">Privacy Policy</a>
+        </div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:gap-12;">
+      <div style="font-size:12px;color:rgba(245,243,239,0.25);">© 2025 Outing. Made with love in San Francisco.</div>
+      <div style="font-size:12px;color:rgba(245,243,239,0.25);">Made with ♥ in San Francisco 🌉</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════ JS: Scroll Reveal ═══════════════════════════════ -->
+<script>
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  reveals.forEach(el => observer.observe(el));
+
+  // Stagger reveals within same section
+  document.querySelectorAll('section').forEach(section => {
+    const items = section.querySelectorAll('.reveal');
+    items.forEach((item, i) => {
+      item.style.transitionDelay = (i * 0.1) + 's';
+    });
+  });
+
+  // Active nav on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      if (window.scrollY >= section.offsetTop - 120) current = section.id;
+    });
+    navLinks.forEach(link => {
+      link.style.color = link.getAttribute('href') === '#' + current
+        ? '#f5f3ef' : 'rgba(245,243,239,0.65)';
+    });
+  });
+</script>
+
+</body>
+</html>
