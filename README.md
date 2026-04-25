@@ -1,13 +1,12 @@
 # 🚀 Outing Landing Page
 
-A modern, premium landing page built with **HTML, Tailwind CSS, and smooth animations**.
-Designed with a focus on clean UI, responsiveness, and engaging user experience.
+A modern, premium landing page built with **HTML, Tailwind CSS, and JavaScript**, focused on clean UI, smooth animations, and responsive design.
 
 ---
 
 ## 🌐 Live Demo
 
-🚧 Coming Soon (Will be deployed using GitHub Pages)
+🔗 https://diya26322632.github.io/OUTING---WEBDESIGN/
 
 ---
 
@@ -33,6 +32,19 @@ Designed with a focus on clean UI, responsiveness, and engaging user experience.
 
 ![Design](screenshots/sc5gd.png)
 
+
+
+---
+
+## 🎯 UI Sections
+
+* Hero Section
+* Experiences Section
+* Organize Section
+* Memories Section
+* Activities Section
+* CTA & Footer
+
 ---
 
 ## ✨ Features
@@ -41,16 +53,16 @@ Designed with a focus on clean UI, responsiveness, and engaging user experience.
 * 🎯 Smooth Scroll Animations
 * 🎨 Modern UI/UX Design
 * ⚡ Tailwind CSS Styling
-* 🧩 Clean Layout & Structure
-* 🔥 Interactive Elements
+* 🧩 Clean Code Structure (HTML, CSS, JS separated)
+* 🔥 Interactive UI Elements
 
 ---
 
 ## 🛠️ Tech Stack
 
-* **HTML5**
-* **Tailwind CSS**
-* **JavaScript**
+* HTML5
+* Tailwind CSS
+* JavaScript
 
 ---
 
@@ -60,6 +72,8 @@ Designed with a focus on clean UI, responsiveness, and engaging user experience.
 Outing/
 │
 ├── index.html
+├── style.css
+├── script.js
 ├── README.md
 ├── website-review.md
 ├── screenshots/
@@ -74,11 +88,11 @@ Outing/
 
 ## 📊 UI/UX Audit
 
-A detailed website analysis and improvement suggestions are included in:
+A detailed analysis and improvement suggestions are included in:
 
 👉 `website-review.md`
 
-This includes:
+Includes:
 
 * UI/UX issues
 * Design improvements
@@ -89,28 +103,20 @@ This includes:
 
 ## 🚀 How to Run Locally
 
-1. Clone the repository
-
-```
-git clone https://github.com/your-username/your-repo-name.git
+```bash
+git clone https://github.com/diya26322632/OUTING---WEBDESIGN.git
 ```
 
-2. Open project folder
-
-3. Run using Live Server (VS Code)
+Open the folder and run using **Live Server (VS Code)**
 
 ---
 
 ## 👩‍💻 Author
 
 **Diya Sangar**
-Computer Science Engineering Student
-Chandigarh University
 
 ---
 
 ## ⭐ Support
 
-If you like this project, give it a ⭐ on GitHub!
-
----
+If you like this project, consider giving it a ⭐ on GitHub!
